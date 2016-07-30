@@ -10,7 +10,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 
-VGG_MEAN = [103.939, 116.779, 123.68]
+VGG_MEAN = [106.,  120., 114.]
 
 
 class FCN8VGG:
@@ -33,7 +33,7 @@ class FCN8VGG:
         self.wd = 5e-4
         print("npy file loaded")
 
-    def build(self, rgb, train=False, num_classes=20, random_init_fc8=False,
+    def build(self, rgb, train=False, num_classes=2, random_init_fc8=False,
               debug=False):
         """
         Build the VGG model using loaded weights
@@ -137,6 +137,8 @@ class FCN8VGG:
                                              ksize=16, stride=8)
 
         self.pred_up = tf.argmax(self.upscore32, dimension=3)
+
+        return self.upscore32
 
     def _max_pool(self, bottom, name, debug):
         pool = tf.nn.max_pool(bottom, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
@@ -398,6 +400,30 @@ class FCN8VGG:
         init = tf.constant_initializer(value=weights,
                                        dtype=tf.float32)
         return tf.get_variable(name="weights", initializer=init, shape=shape)
+
+    def loss(self, logits, labels, num_classes = 2):
+        """Add L2Loss to all the trainable variables.
+
+        Add summary for "Loss" and "Loss/avg".
+        Args:
+            logits: Logits from inference().
+            labels: Labels from  inputs(). 1-D tensor of shape [batch_size]
+
+        Returns:
+            Loss tensor of type float.
+        """
+        # Calculate the average cross entropy loss across the batch.
+        logits = tf.reshape(logits, (-1, num_classes))
+        labels = tf.reshape(labels, (-1,))
+        labels = tf.cast(labels, tf.int64)
+        cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels,
+                                                                       name = 'cross_entropy_per_example')
+        cross_entropy_mean = tf.reduce_mean(cross_entropy, name = 'cross_entropy')
+        tf.add_to_collection('losses', cross_entropy_mean)
+
+        # The total loss is defined as the cross entropy loss plus all of the weight
+        # decay terms (L2 loss).
+        return tf.add_n(tf.get_collection('losses'), name = 'total_loss')
 
 
 def _activation_summary(x):
