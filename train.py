@@ -11,7 +11,6 @@
 """
 import sys
 sys.path.append('..')
-# from utils.reader.read_comment.reader import Reader
 import tensorflow as tf
 
 from datetime import datetime
@@ -30,7 +29,7 @@ test_steps = 100
 restore_path = './train/'
 test_dir = './test'
 
-reader = Reader('/export/wangqingze/fcn.berkeleyvision.org/data/card', batch_size = batch_size)
+reader = Reader('/export/data/card', batch_size = batch_size)
 model = FCN8VGG('./vgg16.npy')
 
 
@@ -59,6 +58,7 @@ def train():
         with tf.device('/gpu:1'):
             logits = model.build(images)
             total_loss = model.loss(logits, labels)
+            # total_loss = softmaxwithloss.loss(logits, labels, 2)
 
         losses = tf.get_collection('losses')
         loss_averages = tf.train.ExponentialMovingAverage(0.9, name = 'avg')
@@ -75,7 +75,7 @@ def train():
         #                             initializer = tf.constant_initializer(0), trainable = False)
         global_step = tf.Variable(0, trainable = False)
 
-        lr = tf.train.exponential_decay(0.01,
+        lr = tf.train.exponential_decay(1e-4,
                             global_step,
                             1000,
                             0.9999,
@@ -150,7 +150,7 @@ def train():
 
             # Save the model checkpoint periodically.
             if (step != 0 and step % 1000 == 0) :
-                path = os.path.join(train_dir, 'comment')
+                path = os.path.join(train_dir, 'fcn')
                 saver.save(sess, path, global_step = step)
 
 

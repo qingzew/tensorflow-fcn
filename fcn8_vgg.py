@@ -415,7 +415,8 @@ class FCN8VGG:
         # Calculate the average cross entropy loss across the batch.
         logits = tf.reshape(logits, (-1, num_classes))
         labels = tf.reshape(labels, (-1,))
-        labels = tf.cast(labels, tf.int64)
+        # labels = tf.cast(labels, tf.int64)
+
         cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels,
                                                                        name = 'cross_entropy_per_example')
         cross_entropy_mean = tf.reduce_mean(cross_entropy, name = 'cross_entropy')

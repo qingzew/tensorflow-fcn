@@ -31,8 +31,8 @@ class Reader(object):
         images = []
         labels = []
         for line in open(path):
-            images.append(os.path.join(self.data_dir,'JPEGImage', line.strip() + '.jpg'))
-            labels.append(os.path.join(self.data_dir, 'JPEGImage', line.strip() + '.png'))
+            images.append(os.path.join(self.data_dir,'JPEGImages', line.strip() + '.jpg'))
+            labels.append(os.path.join(self.data_dir, 'SegmentationClass', line.strip() + '.png'))
 
         return tf.pack(images), tf.pack(labels)
 
@@ -40,9 +40,12 @@ class Reader(object):
         image_name = tf.read_file(self.filename_queue[0])
         image = tf.image.decode_jpeg(image_name, channels = 3)
         image = tf.image.resize_images(image, 320, 480)
+        image /= 255.
+
         label_name = tf.read_file(self.filename_queue[1])
         label = tf.image.decode_png(label_name, channels = 1)
         label = tf.image.resize_images(label, 320, 480)
+        label = tf.to_int64(label > 0)
 
         return image, label
 
@@ -147,12 +150,9 @@ class Reader(object):
 
 
 def main(argv = None):
-    reader = Reader('/export/wangqingze/fcn.berkeleyvision.org/data/card/', batch_size = 1)
+    reader = Reader('/export/data/card/', batch_size = 1)
     images, labels = reader.next_train()
-    sess = tf.Session()
-    sess.run(images)
 
 if __name__ == '__main__':
-    # tf.app.run()
-    main()
+    tf.app.run()
 
